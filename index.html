@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>AI 밸류체인 투자 맵 v2</title>
+<meta name="theme-color" content="#0b0d12" />
+<meta name="description" content="AI 밸류체인 11개 레이어 · 병목 이동 · 투자 렌즈 · 트래킹 딜" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="AI 밸류체인 맵" />
+<style>
+  :root{
+    --bg:#0b0d12; --bg2:#0f131b; --card:#141922; --card2:#1a202b;
+    --line:#242c3a; --tx:#e9eef7; --tx2:#9aa6b8; --tx3:#6b7789;
+    --acc:#7aa2ff; --core:#3ddc97; --cond:#7aa2ff; --solver:#c084fc; --watch:#8b98ab; --fin:#ff6b6b;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--tx)}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic","Noto Sans KR",sans-serif;
+    font-size:15px; line-height:1.6; letter-spacing:-0.012em;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:calc(78px + var(--safe-b));
+    overscroll-behavior-y:contain;
+  }
+  a{color:var(--acc)}
+  button{font-family:inherit}
+  header{
+    position:sticky; top:0; z-index:40;
+    background:rgba(11,13,18,.9);
+    backdrop-filter:saturate(180%) blur(18px);
+    -webkit-backdrop-filter:saturate(180%) blur(18px);
+    border-bottom:1px solid var(--line);
+    padding:calc(12px + env(safe-area-inset-top,0px)) 16px 0;
+  }
+  .h-row{display:flex;align-items:center;gap:10px}
+  .logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(145deg,#1f3f74,#101826);border:1px solid #2f4570;display:grid;place-items:center;flex:0 0 auto}
+  .logo svg{width:18px;height:18px}
+  h1{font-size:16.5px;margin:0;font-weight:750;letter-spacing:-0.03em;white-space:nowrap}
+  .sub{font-size:11px;color:var(--tx3);margin-top:1px}
+  .ver{margin-left:auto;font-size:11px;font-weight:700;color:#9ec1ff;background:#16233a;border:1px solid #274067;padding:4px 9px;border-radius:999px}
+  .searchwrap{padding:11px 0 12px}
+  .search{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;color:var(--tx);font-size:14.5px;outline:none}
+  .search::placeholder{color:var(--tx3)}
+  .search:focus{border-color:#33507f}
+
+  .wrap{padding:14px 16px 0}
+  .legend{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:0 0 13px;margin:0}
+  .legend::-webkit-scrollbar{display:none}
+  .lchip{flex:0 0 auto;display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg2);color:var(--tx2);padding:6px 11px;border-radius:999px;font-size:12.5px;font-weight:600;white-space:nowrap;cursor:pointer}
+  .lchip.on{background:#182338;border-color:#35527d;color:#dce8ff}
+  .dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+
+  .layer{background:var(--card);border:1px solid var(--line);border-radius:15px;margin-bottom:11px;overflow:hidden}
+  .layer.open{box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .lhead{display:flex;align-items:stretch;gap:10px;padding:13px 14px;cursor:pointer}
+  .lbar{width:4px;border-radius:3px;flex:0 0 auto}
+  .lmain{flex:1;min-width:0}
+  .ltop{display:flex;align-items:center;gap:7px}
+  .lname{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14.5px;font-weight:700;letter-spacing:-0.02em}
+  .lidx{font-size:10.5px;font-weight:800;color:var(--tx3);background:#10151e;border:1px solid var(--line);padding:2px 6px;border-radius:5px;letter-spacing:.02em;flex:0 0 auto}
+  .lwhy{font-size:12px;color:var(--tx3);margin-top:4px;line-height:1.5;display:none;padding-right:4px}
+  .layer.open .lwhy{display:block}
+  .bn{font-size:10.5px;font-weight:800;padding:3px 7px;border-radius:6px;white-space:nowrap;border:1px solid transparent}
+  .bn.h{background:#3a1d21;color:#ff9d9d;border-color:#5a2b31}
+  .bn.m{background:#3a301d;color:#ffcf8b;border-color:#584a2b}
+  .bn.l{background:#1b2b24;color:#7fd9b0;border-color:#2b4a3b}
+  .lcnt{font-size:11px;color:var(--tx3);white-space:nowrap;font-variant-numeric:tabular-nums;flex:0 0 auto}
+  .chev{color:var(--tx3);transition:transform .18s;flex:0 0 auto}
+  .layer.open .chev{transform:rotate(180deg)}
+
+  .nodes{display:none;padding:2px 12px 14px;grid-template-columns:1fr 1fr;gap:7px}
+  .layer.open .nodes{display:grid}
+  .node{
+    display:flex;flex-direction:column;align-items:stretch;gap:1px;
+    background:var(--bg2);border:1px solid var(--line);
+    padding:8px 10px 7px;border-radius:10px;cursor:pointer;color:var(--tx);text-align:left;min-width:0;
+  }
+  .node:active{background:var(--card2)}
+  .ntop{display:flex;align-items:center;gap:6px;min-width:0}
+  .nname{font-size:12.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.02em}
+  .nsub{font-size:9.5px;color:var(--tx3);font-weight:700;padding-left:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .node.deal{border-color:#4a3a6b;background:#191527}
+  .node.deal .nsub{color:#a78bfa}
+
+  .sec-h{display:flex;align-items:baseline;gap:8px;margin:22px 2px 10px}
+  .sec-h h2{font-size:14px;margin:0;font-weight:750;letter-spacing:-0.02em}
+  .sec-h span{font-size:11.5px;color:var(--tx3)}
+
+  .tl{position:relative;padding-left:18px}
+  .tl:before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:linear-gradient(#ffb454,#7aa2ff,#ff6b6b);opacity:.45;border-radius:2px}
+  .tli{position:relative;margin-bottom:13px}
+  .tli:before{content:"";position:absolute;left:-16.5px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--bg);border:2px solid #4d6a9c}
+  .tli b{font-size:12px;color:#a9c3ea;font-weight:700;letter-spacing:.01em}
+  .tli p{margin:2px 0 0;font-size:13px;color:var(--tx2);line-height:1.55}
+
+  .heat{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:12px}
+  .heat th{font-size:10.5px;color:var(--tx3);font-weight:700;padding:0 0 2px;text-align:center}
+  .heat th:first-child{text-align:left;padding-left:10px}
+  .heat td{background:var(--card);padding:9px 4px;text-align:center;color:var(--tx2);font-weight:700}
+  .heat td:first-child{text-align:left;padding-left:10px;font-weight:650;color:var(--tx);border-radius:10px 0 0 10px;font-size:12px}
+  .heat td:last-child{border-radius:0 10px 10px 0}
+  .cell{display:inline-block;width:22px;height:22px;border-radius:6px;line-height:22px;font-size:10.5px;font-weight:800}
+  .c3{background:#4a2027;color:#ffb3b3}.c2{background:#42351f;color:#ffd59b}.c1{background:#1d2a24;color:#8fd6b4}
+
+  .deal{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:14px;margin-bottom:11px}
+  .dh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px}
+  .dname{font-size:14.5px;font-weight:750;letter-spacing:-0.02em}
+  .dsub{font-size:11.5px;color:var(--tx3)}
+  .dmeta{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0}
+  .m{font-size:11px;background:var(--bg2);border:1px solid var(--line);color:var(--tx2);padding:4px 8px;border-radius:7px}
+  .dtxt{font-size:13px;color:var(--tx2);line-height:1.6;margin:6px 0 0}
+  .dtxt b{color:var(--tx);font-weight:650}
+
+  nav{
+    position:fixed;left:0;right:0;bottom:0;z-index:50;
+    background:rgba(13,16,23,.94);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border-top:1px solid var(--line);
+    display:flex;padding:8px 10px calc(8px + var(--safe-b));
+  }
+  nav button{flex:1;background:none;border:0;color:var(--tx3);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;padding:4px 0;cursor:pointer}
+  nav button.on{color:#bcd3ff}
+  nav svg{width:20px;height:20px}
+
+  #backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .18s;z-index:60}
+  #backdrop.on{opacity:1;pointer-events:auto}
+  #sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:70;
+    background:var(--card2);border-top:1px solid #2c3646;border-radius:18px 18px 0 0;
+    transform:translateY(102%);transition:transform .22s cubic-bezier(.2,.8,.2,1);
+    max-height:82vh;overflow:auto;padding:8px 18px calc(24px + var(--safe-b));
+    box-shadow:0 -18px 50px rgba(0,0,0,.55);
+  }
+  #sheet.on{transform:translateY(0)}
+  .grab{width:38px;height:4px;border-radius:2px;background:#3a4658;margin:6px auto 12px}
+  .sh-top{display:flex;align-items:flex-start;gap:9px}
+  .sh-name{font-size:19px;font-weight:780;letter-spacing:-0.03em;margin:0}
+  .sh-tk{font-size:12px;color:var(--tx3);font-weight:700;margin-top:2px}
+  .sh-badge{margin-left:auto;font-size:11px;font-weight:800;padding:4px 9px;border-radius:7px;border:1px solid}
+  .sh-role{margin:13px 0 4px;font-size:12.5px;color:#a9c3ea;font-weight:700}
+  .sh-txt{font-size:14px;color:var(--tx2);line-height:1.65;margin:6px 0 0}
+  .sh-h{font-size:11px;font-weight:800;color:var(--tx3);letter-spacing:.06em;margin:18px 0 5px}
+  .sh-warn{background:#2a1b1f;border:1px solid #4a2a30;border-radius:10px;padding:10px 12px;font-size:13px;color:#ffb9b9;line-height:1.55}
+  .sh-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  .sh-tags span{font-size:11px;color:var(--tx3);border:1px solid var(--line);padding:3px 8px;border-radius:6px}
+
+  .note{font-size:11.5px;color:var(--tx3);line-height:1.6;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+  .empty{padding:40px 10px;text-align:center;color:var(--tx3);font-size:13px}
+  .banner{background:linear-gradient(135deg,#17243a,#141922);border:1px solid #27395a;border-radius:14px;padding:13px 14px;margin-bottom:14px}
+  .banner b{font-size:13px;color:#cfe0ff}
+  .banner p{margin:5px 0 0;font-size:12.5px;color:var(--tx2);line-height:1.55}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-row">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#9ec1ff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="1.6" fill="#9ec1ff"/><circle cx="15" cy="12" r="1.6" fill="#3ddc97"/><circle cx="10" cy="19" r="1.6" fill="#ffb454"/>
+      </svg>
+    </div>
+    <div style="min-width:0">
+      <h1>AI 밸류체인 투자 맵</h1>
+      <div class="sub">레이어 · 병목 이동 · 투자 렌즈</div>
+    </div>
+    <span class="ver">v2</span>
+  </div>
+  <div class="searchwrap">
+    <input id="q" class="search" type="search" placeholder="기업·티커·키워드 검색 (예: HBM, CXL, 변압기)" autocomplete="off" />
+  </div>
+</header>
+
+<main id="v-map" class="wrap">
+  <div class="legend" id="legend"></div>
+  <div id="layers"></div>
+  <div class="note">
+    <b>읽는 법</b> — 위에서 아래로 갈수록 수요에 가깝고, 아래에서 위로 갈수록 병목이 됩니다. 2026년의 병목은 <b>전력·계통</b>과 <b>자본(크레딧)</b>이고, 다음 차례는 <b>CXL·스토리지 계층화</b>입니다.<br><br>
+    ※ 의사결정 지원용이며 투자 권유가 아닙니다. 수치는 각 사 공시·보도 기준이며 미확인 항목은 본문에 표기했습니다. 최종 판단 전 원문 대조 필요.
+  </div>
+</main>
+
+<main id="v-heat" class="wrap" hidden>
+  <div class="banner">
+    <b>한 줄 결론</b>
+    <p>병목은 <b>연산 → 메모리 → 전력 → 자본</b>으로 이동했습니다. 실물(수요·가격)은 강한데, 2026년 하반기 들어 <b>자금조달</b>이 새로운 병목으로 부상 — 코어위브 CDS 1,000bp, DC 하이일드 95센트, 퍼머스 IPO 철회가 그 신호입니다.</p>
+  </div>
+  <div class="sec-h"><h2>레이어별 병목 강도</h2><span>2024 → 2026</span></div>
+  <table class="heat" id="heat"></table>
+
+  <div class="sec-h"><h2>병목 이동 타임라인</h2><span>2024.01 → 2026.10</span></div>
+  <div class="tl">
+    <div class="tli"><b>2024 상반기 — 연산</b><p>HBM3E·CoWoS 패키징이 공급 상한. GPU를 사도 못 만드는 국면, 메모리 3사 HBM 경쟁 시작.</p></div>
+    <div class="tli"><b>2024 하반기 — 전력</b><p>변압기·가스터빈 리드타임이 2~4년으로 늘며 부지·전력 확보가 새 제약. 전력기기 주가 재평가.</p></div>
+    <div class="tli"><b>2025 — 메모리 · 표준</b><p>HBM4 가격 협상 개시, CXL 4.0 규격 발표(11월). 네오클라우드 상장·확장으로 컴퓨트 금융화 진행.</p></div>
+    <div class="tli"><b>2026 상반기 — 집행</b><p>미국 데이터센터 47개+ 지연·차단(FT), 파이프라인 35% 이탈(Bernstein). Gartner는 네오클라우드 80% 독립성 상실·$3.5조 impairment 경고.</p></div>
+    <div class="tli"><b>2026 3Q — 자본</b><p>크레딧 전이가 DC 하이일드·PF로 확산. 코어위브 2031 회사채 16%대, DC HY 평균 95센트, 볼타 $50억 레버리지론 11%+, PF 발행 $1,060억(전년 3배).</p></div>
+    <div class="tli"><b>2026 10월 — 검증</b><p>퍼머스 IPO 철회(고평가·부채 ~$300억). 메모리는 고점권(DDR5 16Gb $60.63·DDR4 $83.41 역전). CXL 3.2는 랙 단위 100TB+ 실배치(Phase 3) 진입.</p></div>
+  </div>
+  <div class="note">출처: FT·Bernstein·Gartner·TrendForce·Bloomberg 보도 및 각 사 공시(2026-10 기준). 일부 수치는 2차 소스이며 원문 대조 전까지 잠정치입니다.</div>
+</main>
+
+<main id="v-deals" class="wrap" hidden>
+  <div class="banner">
+    <b>우리 트래킹 딜</b>
+    <p>맵 위에서 실제로 검토한 대상만 연결했습니다. 각 카드의 결론은 DD·리서치 기준이며, 가격 조건은 변동될 수 있습니다.</p>
+  </div>
+  <div id="deals"></div>
+  <div class="note">※ 투자 권유 아님. Vessl·딥엑스 수치는 각 사 DD 원문(KPMG·회계법인) 기준, ScaleFlux·프라임마스·퍼머스는 공개자료 기준입니다.</div>
+</main>
+
+<nav>
+  <button id="t-map" class="on" onclick="tab('map')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="10" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+    맵
+  </button>
+  <button id="t-heat" onclick="tab('heat')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 19V9M9.5 19V5M15 19v-7M20.5 19V8"/></svg>
+    병목
+  </button>
+  <button id="t-deals" onclick="tab('deals')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v12H4z"/><path d="M8 7V5h8v2M4 12h16"/></svg>
+    딜
+  </button>
+</nav>
+
+<div id="backdrop" onclick="closeSheet()"></div>
+<aside id="sheet" aria-live="polite"></aside>
+
+<script>
+const STANCE = {
+  core:   {label:"핵심 수혜", c:"#3ddc97", bg:"#16281f", bd:"#2b4a3b"},
+  cond:   {label:"조건부",   c:"#7aa2ff", bg:"#17233a", bd:"#2b3f63"},
+  solver: {label:"병목 해소", c:"#c084fc", bg:"#231a33", bd:"#44315f"},
+  watch:  {label:"관찰",     c:"#8b98ab", bg:"#1b2029", bd:"#2d3542"},
+  fin:    {label:"자금조달 리스크", c:"#ff6b6b", bg:"#2a1b1f", bd:"#4a2a30"}
+};
+
+const LAYERS = [
+{ i:0, name:"전력 · 에너지 · 계통", col:"#ffb454", b:["중","상","상"],
+  why:"계통 연결 대기·변압기·가스터빈 리드타임. 2026년 최대 병목 — 돈이 있어도 전기가 없으면 못 짓습니다.",
+  nodes:[
+    {n:"Vertiv", t:"VRT", r:"US", s:"core", role:"DC 전력·열관리 (UPS·CDU·냉각)",
+     v:"AI 랙 전력밀도 상승의 가장 직접적 수혜. 수주잔고가 매출보다 빠르게 늘어나는 구간.", risk:"사이클 후반 밸류에이션 부담, 수주→매출 전환 지연", tag:["냉각","전력"]},
+    {n:"GE Vernova", t:"GEV", r:"US", s:"core", role:"가스터빈·그리드 장비",
+     v:"신규 가스발전과 계통 보강 수요의 본체. 리드타임이 길어 수주잔고가 몇 년치로 쌓입니다.", risk:"정치·인허가 변수", tag:["발전","계통"]},
+    {n:"Eaton", t:"ETN", r:"US", s:"core", role:"배전·스위치기어·전력관리",
+     v:"DC 전력 인프라의 표준 부품. 데이터센터·유틸리티 양쪽에서 동시 수혜.", tag:["배전"]},
+    {n:"Quanta Services", t:"PWR", r:"US", s:"core", role:"송배전 EPC",
+     v:"전력을 끌어오는 공사 자체가 병목이라 수주 환경이 구조적으로 우호적.", tag:["계통","EPC"]},
+    {n:"Vistra", t:"VST", r:"US", s:"core", role:"원자력·가스 발전, DC PPA",
+     v:"전력 가격과 DC 장기계약의 직접 레버리지. 발전 자산이 곧 옵션.", risk:"전력가격·규제 변동", tag:["발전","PPA"]},
+    {n:"HD현대일렉트릭", t:"267260", r:"KR", s:"core", role:"초고압 변압기·차단기",
+     v:"미국 변압기 교체·증설 사이클의 국내 대표 수혜. 리드타임 병목의 실체를 파는 회사.", risk:"환율·수주 집중", tag:["변압기"]},
+    {n:"효성중공업", t:"298040", r:"KR", s:"core", role:"초고압 변압기·GIS",
+     v:"변압기·차단기 수출 믹스 개선. 북미 데이터센터향 수주가 실적 레버리지.", tag:["변압기"]},
+    {n:"LS ELECTRIC", t:"010120", r:"KR", s:"cond", role:"배전·자동화·DC 전력솔루션",
+     v:"미국 DC향 배전 수주 확대는 긍정적이나, 변압기 대비 단가·마진 상승 폭은 제한적.", tag:["배전"]},
+    {n:"산일전기", t:"062040", r:"KR", s:"cond", role:"특수 변압기 (美 DC향)",
+     v:"성장률은 가장 높지만 밸류에이션이 이미 그 성장을 상당 부분 반영.", risk:"밸류에이션·소형주 변동성", tag:["변압기"]},
+    {n:"Bloom Energy", t:"BE", r:"US", s:"watch", role:"온사이트 연료전지",
+     v:"계통 연결을 우회하는 전력원이라는 논리는 유효. 다만 실행·수익성 검증이 남았습니다.", tag:["연료전지"]}
+  ]},
+
+{ i:1, name:"장비 · 소재", col:"#d9a441", b:["중","중","중"],
+  why:"선단공정·HBM 증설의 필수 관문. 병목이라기보다 '통행료' 성격 — 캐파 증설 사이클에 동행합니다.",
+  nodes:[
+    {n:"ASML", t:"ASML", r:"EU", s:"core", role:"EUV·High-NA 노광 독점",
+     v:"선단공정 진입의 유일한 관문. 수출통제가 오히려 공급 측 희소성을 강화.", risk:"중국 수출규제", tag:["노광"]},
+    {n:"Applied Materials", t:"AMAT", r:"US", s:"core", role:"증착·식각·이온주입 종합",
+     v:"HBM·선단공정 증설의 폭넓은 수혜. 장비 포트폴리오가 가장 넓습니다.", tag:["증설"]},
+    {n:"Lam Research", t:"LRCX", r:"US", s:"core", role:"식각·증착 (HBM TSV)",
+     v:"HBM 적층·TSV 공정의 핵심 장비. 메모리 캐파 증설과 직결.", tag:["HBM","식각"]},
+    {n:"KLA", t:"KLAC", r:"US", s:"core", role:"검사·계측",
+     v:"수율이 곧 경쟁력인 국면에서 검사·계측은 후행이 아니라 선행 수혜.", tag:["계측"]},
+    {n:"Tokyo Electron", t:"8035.T", r:"JP", s:"core", role:"코터·식각·증착",
+     v:"메모리 증설 사이클의 일본 측 대표. 한국·대만 캐파와 동행.", tag:["증설"]},
+    {n:"HPSP", t:"403870", r:"KR", s:"core", role:"고압수소 어닐링 장비 (사실상 독점)",
+     v:"국내 장비 중 가장 명확한 독점 구조. 선단 로직·HBM 공정 확대에 비례.", risk:"고객 집중·밸류에이션", tag:["어닐링"]},
+    {n:"원익IPS", t:"240810", r:"KR", s:"cond", role:"증착·열처리 장비",
+     v:"메모리 투자 재개 수혜이나, 고객사 캐파 결정에 실적이 그대로 연동.", tag:["증착"]},
+    {n:"주성엔지니어링", t:"036930", r:"KR", s:"cond", role:"ALD·증착",
+     v:"ALD 수요 확대는 구조적. 다만 수주 변동성이 크고 실적 가시성이 낮습니다.", tag:["ALD"]},
+    {n:"이오테크닉스", t:"039030", r:"KR", s:"cond", role:"레이저 어닐링·가공",
+     v:"HBM·선단공정 레이저 공정 확대 수혜. 분기 편차가 큰 편.", tag:["레이저"]},
+    {n:"솔브레인", t:"357780", r:"KR", s:"cond", role:"반도체 소재 (식각가스·전구체)",
+     v:"소재는 물량 연동 안정형. 가격 협상력은 장비 대비 약합니다.", tag:["소재"]}
+  ]},
+
+{ i:2, name:"파운드리 · 패키징", col:"#c08a3e", b:["상","상","상"],
+  why:"AI 가속기의 실제 생산 상한. CoWoS·선단 패키징이 GPU 출하량을 결정합니다.",
+  nodes:[
+    {n:"TSMC", t:"TSM", r:"TW", s:"core", role:"선단 로직 + CoWoS 패키징",
+     v:"AI 가속기 생산의 사실상 단일 관문. 가격 인상 여력이 구조적으로 남아 있습니다.", risk:"지정학(대만)·해외 팹 수율", tag:["CoWoS","N2"]},
+    {n:"삼성전자(파운드리)", t:"005930", r:"KR", s:"cond", role:"파운드리 SF2 + 메모리·HBM",
+     v:"SF2 수율과 HBM4 진입이 관문. 둘 다 확인되면 리레이팅 여지가 가장 큰 조합.", risk:"수율·고객 확보 지연", tag:["SF2","HBM4"]},
+    {n:"Intel Foundry", t:"INTC", r:"US", s:"watch", role:"18A·14A 파운드리",
+     v:"18A 실행이 증명되기 전까지는 옵션 가치. 외부 고객 수주가 판별 기준.", risk:"실행·자금", tag:["18A"]},
+    {n:"Amkor", t:"AMKR", r:"US", s:"cond", role:"첨단 패키징·테스트",
+     v:"패키징 캐파가 병목인 구간에서 후행 수혜. 다만 마진 구조는 파운드리보다 열위.", tag:["패키징"]},
+    {n:"ASE", t:"ASX", r:"TW", s:"cond", role:"OSAT 1위",
+     v:"첨단 패키징 외주 물량의 최대 수용처. CoWoS 대체 수요 일부 흡수.", tag:["패키징"]}
+  ]},
+
+{ i:3, name:"메모리 (HBM·DRAM)", col:"#a8752f", b:["상","상","상"],
+  why:"2024~26년 가장 강한 실물 병목. HBM4 협상력과 DDR4>DDR5 역전이라는 이례적 가격 구조가 동시에 나타났습니다.",
+  nodes:[
+    {n:"SK하이닉스", t:"KR", r:"KR", s:"core", role:"HBM 리더 (HBM4 주도)",
+     v:"HBM 세대 전환에서 가장 앞선 위치. 2026년 물량·가격 협상의 기준점을 쥐고 있습니다.", risk:"단일 고객 의존·증설 사이클", tag:["HBM4"]},
+    {n:"삼성전자(메모리)", t:"005930", r:"KR", s:"core", role:"DRAM·NAND·HBM4",
+     v:"메모리 업황 레버리지 + HBM4 진입 옵션. 파운드리와의 번들 논리가 관전점.", risk:"HBM4 퀄 통과 시점", tag:["HBM4","DRAM"]},
+    {n:"Micron", t:"MU", r:"US", s:"core", role:"DRAM·HBM·NAND",
+     v:"HBM 캐파 완판 국면의 가격 수혜. 미국 내 생산 확대가 지정학 프리미엄.", tag:["HBM"]},
+    {n:"SanDisk", t:"SNDK", r:"US", s:"cond", role:"NAND (구 WDC 낸드)",
+     v:"NAND 가격 사이클의 직접 레버리지. 다만 YTD 급등으로 사이클 선반영 부담.", risk:"NAND 가격 급변·과열", tag:["NAND"]},
+    {n:"Kioxia", t:"285A.T", r:"JP", s:"cond", role:"NAND + CXL XL1",
+     v:"NAND 사이클 + CXL 모듈 옵션. 다만 CXL은 아직 매출 기여가 제한적.", tag:["NAND","CXL"]},
+    {n:"DDR4 > DDR5 역전", t:"—", r:"—", s:"watch", role:"가격 구조 이상 신호",
+     v:"DDR4 16Gb $83.41 > DDR5 16Gb $60.63 (2026-10). 레거시 공급 축소가 만든 역전 — 서버 교체·재고 사이클의 왜곡을 시사합니다.", tag:["가격","신호"]}
+  ]},
+
+{ i:4, name:"연산 (GPU · ASIC · NPU)", col:"#8f6b52", b:["상","중","중"],
+  why:"공급은 개선됐지만 표준·소프트웨어 락인이 남은 축. 병목이 '칩'에서 '전력·자본'으로 넘어간 뒤에도 가격 결정력은 유지.",
+  nodes:[
+    {n:"NVIDIA", t:"NVDA", r:"US", s:"core", role:"GPU + NVLink + ICMS 표준",
+     v:"하드웨어를 넘어 표준을 소유. KV cache를 NVMe로 내리는 ICMS까지 정의하며 스토리지 계층까지 영향.", risk:"고객 자체칩·전력 제약", tag:["GPU","표준"]},
+    {n:"AMD", t:"AMD", r:"US", s:"cond", role:"MI450·Instinct",
+     v:"하드웨어 경쟁력은 따라왔고 남은 것은 소프트웨어 생태계. 대형 고객 1~2곳 확보가 판별점.", risk:"ROCm 생태계", tag:["GPU"]},
+    {n:"Broadcom", t:"AVGO", r:"US", s:"core", role:"커스텀 ASIC + 네트워킹",
+     v:"하이퍼스케일러 자체칩의 최대 수혜. GPU 대체 수요가 곧 매출.", tag:["ASIC","네트워킹"]},
+    {n:"Intel", t:"INTC", r:"US", s:"watch", role:"Gaudi·가속기",
+     v:"제품보다 파운드리 스토리가 주가를 움직이는 국면. 가속기 사업은 아직 옵션.", tag:["가속기"]},
+    {n:"리벨리온", t:"비상장", r:"KR", s:"watch", role:"국내 AI NPU (데이터센터·엣지)",
+     v:"국내 NPU 중 상용 레퍼런스가 가장 앞선 편. 다만 매출 규모·고객 검증은 초기.", risk:"자금·고객 확보", tag:["NPU","국내"]}
+  ]},
+
+{ i:5, name:"인터커넥트 · CXL · 스위치", col:"#6f7fb0", b:["하","중","상"],
+  why:"다음 병목. 메모리 벽을 랙 단위 풀링으로 우회하는 축 — 2026년 '평가 → 실배치'로 넘어왔습니다.",
+  nodes:[
+    {n:"Astera Labs", t:"ALAB", r:"US", s:"core", role:"Leo CXL·Aries PCIe7",
+     v:"CXL·PCIe 연결성의 순수 플레이. 2Q26 매출 $392.4M 사상최대, PCIe6 비중 50%+.", risk:"밸류에이션·경쟁 심화", tag:["CXL","PCIe7"]},
+    {n:"Marvell", t:"MRVL", r:"US", s:"core", role:"Structera CXL 스위치·커스텀",
+     v:"CXL 3.x 스위치(최대 48TB 풀링, Xeon/EPYC/Arm 검증)로 '배치' 국면의 인프라를 공급.", tag:["CXL 스위치"]},
+    {n:"Credo", t:"CRDO", r:"US", s:"cond", role:"AEC·SerDes",
+     v:"랙 내 고속 연결 수요의 직접 수혜. 고객 집중도가 변수.", tag:["AEC"]},
+    {n:"Rambus", t:"RMBS", r:"US", s:"cond", role:"CXL·메모리 IP",
+     v:"IP 로열티 모델로 CXL 확산에 무관하게 수취. 성장 폭은 제한적.", tag:["IP"]},
+    {n:"Montage", t:"688008", r:"CN", s:"watch", role:"CXL 3.2 컨트롤러",
+     v:"중국 내 CXL 공급의 핵심. 지정학·수출통제가 밸류에이션 변수.", tag:["CXL"]},
+    {n:"프라임마스", t:"비상장", r:"KR", s:"solver", role:"CXL 3.0 SoC '팔콘'·JBOM·SLiM", deal:"prime",
+     v:"스위치리스 풀링(SLiM)으로 랙 단위 메모리 공유를 구현. 마이크론 AVL·DOE Abaco 실증 확보가 핵심 레퍼런스.", risk:"양산·고객 확대 속도, 상장 전 자금", tag:["CXL","국내","우리 딜"]}
+  ]},
+
+{ i:6, name:"스토리지 · KV cache", col:"#5b7fa8", b:["중","중","상"],
+  why:"추론 병목이 GPU에서 KV cache로 이동. flash를 새 메모리 계층으로 만드는 회사들이 정중앙에 섭니다.",
+  nodes:[
+    {n:"ScaleFlux", t:"비상장", r:"US", s:"solver", role:"CSD·Gen6 SSD 컨트롤러·CXL MC600", deal:"scaleflux",
+     v:"Computational Storage + CXL 컨트롤러로 'flash를 메모리 계층으로'. NVIDIA ICMS·Storage-Next와 정합, FMS 2026 공동 키노트.", risk:"실매출 비공개, IPO 밸류 프리미엄, 중국계 지정학", tag:["CSD","CXL","우리 딜"]},
+    {n:"Pure Storage", t:"PSTG", r:"US", s:"cond", role:"All-flash·AI 데이터 파이프라인",
+     v:"엔터프라이즈 스토리지의 안정적 수혜. 다만 하이퍼스케일러 커스텀 영역은 침투 제한.", tag:["All-flash"]},
+    {n:"Western Digital", t:"WDC", r:"US", s:"watch", role:"HDD (니어라인)",
+     v:"AI 데이터 레이크의 대용량 니어라인 수요는 우호적. 다만 NAND 분리 이후 성장 축은 좁아짐.", tag:["HDD"]},
+    {n:"Pliops", t:"비상장", r:"IL", s:"watch", role:"KV cache 가속 (XDP)",
+     v:"KV cache 병목을 겨냥한 소프트·하드 결합. 채택 레퍼런스가 아직 제한적.", tag:["KV cache"]},
+    {n:"NGD Systems", t:"비상장", r:"US", s:"watch", role:"Computational Storage",
+     v:"CSD 초기 선도 기업. 시장 자체가 아직 표준화 전입니다.", tag:["CSD"]}
+  ]},
+
+{ i:7, name:"시스템 · 랙 · ODM", col:"#4a7fa0", b:["중","중","중"],
+  why:"병목은 아니지만 물량이 가장 크게 통과하는 구간. 마진은 얇고 대만 ODM 집중도가 높습니다.",
+  nodes:[
+    {n:"Dell", t:"DELL", r:"US", s:"cond", role:"AI 서버·엔터프라이즈",
+     v:"AI 서버 매출은 급증하지만 믹스 악화로 마진이 희석되는 구조. 수주보다 수익성이 관전점.", risk:"마진 희석·백로그 질", tag:["AI 서버"]},
+    {n:"Super Micro", t:"SMCI", r:"US", s:"cond", role:"랙·액체냉각 서버",
+     v:"액체냉각 랙 전환의 수혜이나 회계·내부통제 이슈가 밸류에이션 할인 요인.", risk:"회계·내부통제", tag:["액체냉각"]},
+    {n:"HPE", t:"HPE", r:"US", s:"watch", role:"엔터프라이즈·네트워킹",
+     v:"AI 서버 노출도가 상대적으로 낮아 사이클 민감도도 낮음. 방어적 선택지.", tag:["AI 서버"]},
+    {n:"Quanta Computer", t:"2382.TW", r:"TW", s:"core", role:"GB300 랙 ODM",
+     v:"하이퍼스케일러 랙 조립의 핵심. 물량은 크지만 마진은 구조적으로 낮음.", tag:["ODM","랙"]},
+    {n:"Foxconn", t:"2317.TW", r:"TW", s:"core", role:"AI 서버·랙 통합",
+     v:"랙 단위 통합 물량의 최대 수용처. 매출 규모 대비 마진이 낮은 게 특징.", tag:["ODM"]},
+    {n:"삼성SDS", t:"018260", r:"KR", s:"cond", role:"클라우드·AI 팩토리 운영",
+     v:"국내 AI 팩토리 운영 파트너. 다만 자체 GPU 자산이 아니라 운영·SI 성격이 강합니다.", tag:["국내","운영"]}
+  ]},
+
+{ i:8, name:"네오클라우드 · DC · 컴퓨트", col:"#3f6f9e", b:["하","중","상"],
+  why:"2026년의 새 병목은 '자본'. 실물 수요는 강한데 차입 비용·만기 구조가 사업을 옥죄는 구간입니다.",
+  nodes:[
+    {n:"CoreWeave", t:"CRWV", r:"US", s:"fin", role:"GPU 클라우드 (계약 기반)",
+     v:"수요는 강하지만 조달 구조가 약점. 5Y CDS 1,000bp 돌파, 2031 회사채 16%대, P/S 4.28·Altman Z 0.17.", risk:"차환·단일 고객·$52B 투자 갭", tag:["크레딧","네오클라우드"]},
+    {n:"Nebius", t:"NBIS", r:"NL", s:"cond", role:"유럽계 GPU 클라우드",
+     v:"무담보 하이일드 $3~4B 발행 추진 — 조달 비용이 곧 성장 속도. 담보 구조가 상대적으로 얇습니다.", risk:"무담보 조달 의존", tag:["크레딧"]},
+    {n:"IREN", t:"IREN", r:"AU", s:"cond", role:"전력 자산 기반 컴퓨트",
+     v:"전력·부지를 직접 보유해 담보부 조달이 가능한 방어군. 대신 자체 캐파 전환 실행이 관건.", tag:["전력","담보부"]},
+    {n:"Applied Digital", t:"APLD", r:"US", s:"fin", role:"DC 개발·호스팅",
+     v:"개발 단계 자금조달 의존도가 높아 크레딧 국면에 가장 민감한 그룹.", risk:"PF 조달·만기", tag:["DC 개발"]},
+    {n:"Oracle", t:"ORCL", r:"US", s:"watch", role:"OCI·대형 RPO",
+     v:"RPO는 크지만 그 이행에 필요한 capex·조달이 관전점. 클라우드 4위의 레버리지 확대.", risk:"capex·조달 부담", tag:["OCI"]},
+    {n:"Digital Realty", t:"DLR", r:"US", s:"core", role:"DC REIT (코로·인터커넥션)",
+     v:"공간·전력·연결성만 임대하는 부동산 모델 — 네오클라우드 리스크와 정반대의 안정성. IG 등급·배당.", tag:["REIT"]},
+    {n:"Equinix", t:"EQIX", r:"US", s:"core", role:"인터커넥션 중심 DC REIT",
+     v:"연결성 프리미엄이 방어력. AI 워크로드 대응 capex가 단기 마진 변수.", tag:["REIT"]},
+    {n:"Firmus", t:"비상장", r:"AU", s:"fin", role:"AI 팩토리 개발 (GPU 소유·임대)", deal:"firmus",
+     v:"엔비디아·블랙스톤 백커, 계획 912MW+. 다만 IPO 철회(2026-10) — 고평가·부채 ~$300억·오버행이 원인.", risk:"자금조달·실적 미비", tag:["AI 팩토리","IPO 철회"]},
+    {n:"Vessl AI", t:"비상장", r:"KR", s:"cond", role:"국내 GPUaaS + MLOps 운영 레이어", deal:"vessl",
+     v:"조달단가 우위(삼성SDS RI $1.1·Nebius RI $1.73)는 실재. 다만 수익성이 가동률×매출 램프에 전적으로 걸려 있습니다.", risk:"GPU Margin −141%, '27 계약 공백", tag:["국내","우리 딜"]},
+    {n:"NAVER", t:"035420", r:"KR", s:"watch", role:"하이퍼클로바X·소버린 AI",
+     v:"국내 소버린 AI 수요의 대표 수혜 후보. 다만 GPU 조달·수익화 속도가 관건.", tag:["국내","모델"]},
+    {n:"KT", t:"030200", r:"KR", s:"watch", role:"클라우드·DC 인프라",
+     v:"DC 자산과 전력 확보가 강점. AI 컴퓨트 사업의 수익성 검증은 진행 중.", tag:["국내","DC"]}
+  ]},
+
+{ i:9, name:"모델 · 플랫폼", col:"#3a6a94", b:["중","중","중"],
+  why:"수요의 원천이자 capex의 결정자. 이들의 지출 계획이 위 레이어 전체의 매출이 됩니다.",
+  nodes:[
+    {n:"OpenAI", t:"비상장", r:"US", s:"watch", role:"모델·API, 대규모 컴퓨트 계약",
+     v:"수요 창출자이면서 동시에 조달 의존자. 계약 구조가 네오클라우드 신용의 기초입니다.", risk:"자금조달·적자", tag:["모델"]},
+    {n:"Anthropic", t:"비상장", r:"US", s:"watch", role:"모델·엔터프라이즈 API",
+     v:"엔터프라이즈 침투가 강점. 컴퓨트 확보 경쟁에서의 조건이 관전점.", tag:["모델"]},
+    {n:"Google", t:"GOOGL", r:"US", s:"core", role:"Gemini + TPU 수직계열",
+     v:"자체칩·자체 DC·자체 모델을 모두 가진 유일한 수직계열. capex를 매출로 전환하는 속도가 가장 빠릅니다.", tag:["TPU","수직계열"]},
+    {n:"Meta", t:"META", r:"US", s:"core", role:"Llama·자체칩·초대형 capex",
+     v:"capex 규모가 밸류체인 전체의 수요를 결정. 자체칩 확대는 Broadcom·Marvell 수주로 연결.", tag:["capex"]},
+    {n:"Microsoft", t:"MSFT", r:"US", s:"core", role:"Azure·Maia·OpenAI 파트너",
+     v:"수요와 공급을 동시에 쥔 위치. 다만 capex 증가율이 마진에 부담.", tag:["Azure"]},
+    {n:"Amazon", t:"AMZN", r:"US", s:"core", role:"AWS·Trainium",
+     v:"자체칩(Trainium)으로 원가를 낮추는 전략이 가장 앞섬. 네오클라우드 수요의 최대 흡수처.", tag:["AWS","Trainium"]},
+    {n:"DeepSeek", t:"비상장", r:"CN", s:"watch", role:"효율화 모델 (V4.1-Flash 등)",
+     v:"효율화 혁신은 capex 수요를 늘리는 방향과 줄이는 방향이 동시에 존재 — 2025년 '쇼크' 이후 논쟁 지속.", tag:["효율화","변수"]},
+    {n:"업스테이지", t:"비상장", r:"KR", s:"watch", role:"국내 LLM·솔루션",
+     v:"국내 모델 수요의 대표. 다만 컴퓨트 비용 구조가 수익성의 관문.", tag:["국내"]}
+  ]},
+
+{ i:10, name:"응용 · 피지컬 AI", col:"#31608c", b:["하","하","중"],
+  why:"아직 병목은 아니지만 다음 사이클의 수요원. 엣지 NPU·로보틱스가 '추론의 분산'을 만듭니다.",
+  nodes:[
+    {n:"Tesla", t:"TSLA", r:"US", s:"watch", role:"Optimus·FSD·Dojo",
+     v:"피지컬 AI의 대표 옵션. 밸류에이션이 자동차가 아니라 로보틱스에 걸려 있습니다.", risk:"실행·밸류에이션", tag:["로보틱스"]},
+    {n:"Figure", t:"비상장", r:"US", s:"watch", role:"휴머노이드",
+     v:"초기 단계. 양산·단가·신뢰성이 검증 전입니다.", tag:["휴머노이드"]},
+    {n:"현대모비스", t:"012330", r:"KR", s:"watch", role:"로보틱스 부품·모듈",
+     v:"그룹 로보틱스 밸류체인의 부품 축. 수주 가시성은 아직 낮습니다.", tag:["국내","부품"]},
+    {n:"로보티즈", t:"108490", r:"KR", s:"watch", role:"로봇 액추에이터·플랫폼",
+     v:"국내 로봇 부품의 대표. 실적보다 스토리 프리미엄이 큰 구간.", tag:["국내","액추에이터"]},
+    {n:"DEEPX (딥엑스)", t:"비상장", r:"KR", s:"cond", role:"온디바이스·엣지 AI NPU 팹리스", deal:"deepx",
+     v:"DX-M1(5nm) 양산 → DX-M2(2nm) 2026.10 tape-out. 엣지 추론의 원가를 낮추는 포지션은 유효하나, PO 규모·삼성 SF2 의존이 관문.", risk:"PO $11.09M(중국 66.7%)·자본잠식", tag:["엣지 NPU","국내","우리 딜"]}
+  ]}
+];
+
+const DEALS = [
+ { id:"vessl", name:"Vessl AI", sub:"Project Victory · 국내 GPUaaS + MLOps", tag:"조건부 진행",
+   meta:["Pre-money 5,500억","투자 2,000억 (RCPS 1,000 + CB 1,000)","지분 26.7%","2026F 매출 851억","상장 목표 2028.12"],
+   txt:"조달단가 우위(삼성SDS RI $1.1/hr·Nebius RI $1.73/hr, 시장의 1/3~1/5)와 수주 TCV 1,658억은 실재합니다. 다만 <b>GPU Margin −141%</b>, 가동률 35~40%, 조달 5년 take-or-pay 약 5,949억 vs 고객계약 1년의 <b>기간 불일치</b>가 핵심 쟁점. 손익분기 월매출 171.7억(현재의 약 3.5배). 진행 조건 = ①가동률 90% 실증 ②'27 인식 확보분(566억, 20%)의 계약 전환 ③IG 앵커 확보 ④풋·리픽싱 실효성."},
+ { id:"deepx", name:"DEEPX", sub:"Project Hypernova · 엣지 AI NPU 팹리스", tag:"조건부 진행",
+   meta:["Pre-money 2.85조","라운드 3,500억","DCF 3.38조 vs 시장접근 5.27조","M2 2nm tape-out 2026.10","IPO 2028~29"],
+   txt:"DX-M1(5nm) 양산, DX-M2(2nm) 2026.10 tape-out·2027 Q3 양산 목표. 기술 로드맵은 명확하나 <b>'25A 매출 33.2억·자본잠식 3,677억</b>, 누적 PO $11.09M(중국 66.7%)로 상업화 초기. 평가는 DCF 3.38조와 시장접근 5.27조가 크게 갈립니다(기준 차이). 삼성 SF2 의존과 고객 다변화가 관문."},
+ { id:"scaleflux", name:"ScaleFlux", sub:"스토리지·메모리 컨트롤러 실리콘 (미국)", tag:"관찰 → IPO 트리거",
+   meta:["누적 조달 $280M+","2021 라운드 밸류 $1B","IPO 2026 가을 목표 (GS·MS·Barclays)","매출 비공개"],
+   txt:"CSD5000, <b>FC6116 Gen6 SSD 컨트롤러</b>(28GB/s·7M IOPS, 2026 Q4 샘플링), <b>MC600 CXL 3.2</b> 컨트롤러. FMS 2026에서 NVIDIA와 공동 키노트 — 표준 생태계 락인 신호가 강합니다. 투자 관문은 ①실매출·고객 검증(비공개) ②IPO 밸류가 메모리 슈퍼사이클 프리미엄에 얹혀 있을 가능성 ③경쟁 심화 ④중국계 지정학."},
+ { id:"prime", name:"프라임마스", sub:"CXL 메모리 풀링 (국내 비상장)", tag:"병목 해소 · 추적",
+   meta:["CXL 3.0 SoC '팔콘'","PMA14/16 (3.5/4TB)","JBOM 40→120TB","SLiM 스위치리스 풀링"],
+   txt:"마이크론 AVL 등재와 DOE Abaco 실증은 '실배치' 국면에서 중요한 레퍼런스입니다. 스위치 없이 랙 단위 메모리 공유를 구현하는 SLiM이 차별점. 관문은 양산·고객 확대 속도와 상장 전 자금조달."},
+ { id:"firmus", name:"Firmus", sub:"호주 AI 팩토리 개발 (비상장)", tag:"자금조달 리스크",
+   meta:["운영 DC 2곳·가동 42~46MW","계획 912MW+","FY26 매출 $51M·영업손실 $68M","부채 ~$300억"],
+   txt:"엔비디아(7.2%)·블랙스톤(6.7%) 백커, 오픈AI·메타 공급 계약. 그러나 <b>2026-10 IPO 철회</b> — 고평가 논란·부채·보호예수 부족(첫날 58% 매도 가능). 호주 최대 상장 DC인 NextDC 대비 가동용량 비중 5% vs 25%인데 밸류는 4배였던 점이 문제였습니다. AI 인프라 고평가의 첫 제동 사례."}
+];
+
+/* ---------- render ---------- */
+const S = { q:"", stance:null };
+const NODE_MAP = {};
+LAYERS.forEach((L,li)=>L.nodes.forEach((n,ni)=>{ n.__id = "n"+li+"_"+ni; NODE_MAP[n.__id]=n; }));
+
+function stanceBadge(s){
+  const m = STANCE[s];
+  return `<span class="sh-badge" style="color:${m.c};background:${m.bg};border-color:${m.bd}">${m.label}</span>`;
+}
+function bnClass(v){ return v==="상"?"h":v==="중"?"m":"l"; }
+
+function renderLegend(){
+  const el = document.getElementById("legend");
+  let h = `<button class="lchip ${S.stance===null?'on':''}" onclick="setStance(null)">전체 ${LAYERS.reduce((a,l)=>a+l.nodes.length,0)}</button>`;
+  for(const k in STANCE){
+    const cnt = LAYERS.reduce((a,l)=>a+l.nodes.filter(n=>n.s===k).length,0);
+    h += `<button class="lchip ${S.stance===k?'on':''}" onclick="setStance('${k}')"><span class="dot" style="background:${STANCE[k].c}"></span>${STANCE[k].label} ${cnt}</button>`;
+  }
+  el.innerHTML = h;
+}
+
+function match(n){
+  if(S.stance && n.s!==S.stance) return false;
+  if(!S.q) return true;
+  const q = S.q.toLowerCase();
+  return (n.n+" "+n.t+" "+n.role+" "+n.v+" "+(n.tag||[]).join(" ")).toLowerCase().includes(q);
+}
+
+function renderLayers(){
+  const box = document.getElementById("layers");
+  let out = "";
+  LAYERS.forEach((L,idx)=>{
+    const ns = L.nodes.filter(match);
+    if(!ns.length) return;
+    const open = (S.q || S.stance) ? true : idx<2;
+    out += `<section class="layer ${open?'open':''}" id="L${idx}">
+      <div class="lhead" onclick="toggle(${idx})">
+        <div class="lbar" style="background:${L.col}"></div>
+        <div class="lmain">
+          <div class="ltop">
+            <span class="lidx">L${L.i}</span>
+            <span class="lname">${L.name}</span>
+            <span class="bn ${bnClass(L.b[2])}">병목 ${L.b[2]}</span>
+            <span class="lcnt">${ns.length}</span>
+            <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="lwhy">${L.why}</div>
+        </div>
+      </div>
+      <div class="nodes">
+        ${ns.map(n=>`<button class="node ${n.deal?'deal':''}" onclick="openNode('${n.__id}')">
+          <span class="ntop"><span class="dot" style="background:${STANCE[n.s].c}"></span><span class="nname">${n.n}</span></span>
+          <span class="nsub">${[n.t,n.r].filter(x=>x&&x!=="—").join(" · ")}${n.deal?" · 딜":""}</span>
+        </button>`).join("")}
+      </div>
+    </section>`;
+  });
+  box.innerHTML = out || `<div class="empty">검색 결과가 없습니다.</div>`;
+}
+
+function toggle(i){
+  const el = document.getElementById("L"+i);
+  if(el) el.classList.toggle("open");
+}
+function setStance(k){ S.stance = k; renderLegend(); renderLayers(); }
+
+function openNode(id){
+  const n = NODE_MAP[id];
+  if(!n) return;
+  document.getElementById("sheet").innerHTML = `
+    <div class="grab"></div>
+    <div class="sh-top">
+      <div>
+        <h2 class="sh-name">${n.n}</h2>
+        <div class="sh-tk">${n.t||"—"}${n.r&&n.r!=="—"?" · "+n.r:""}</div>
+      </div>
+      ${stanceBadge(n.s)}
+    </div>
+    <div class="sh-role">${n.role}</div>
+    <div class="sh-h">우리 시각</div>
+    <div class="sh-txt">${n.v}</div>
+    ${n.risk?`<div class="sh-h">리스크</div><div class="sh-warn">${n.risk}</div>`:""}
+    ${(n.tag&&n.tag.length)?`<div class="sh-tags">${n.tag.map(t=>`<span>#${t}</span>`).join("")}</div>`:""}
+  `;
+  document.getElementById("sheet").classList.add("on");
+  document.getElementById("backdrop").classList.add("on");
+}
+function closeSheet(){
+  document.getElementById("sheet").classList.remove("on");
+  document.getElementById("backdrop").classList.remove("on");
+}
+
+function renderHeat(){
+  let h = `<thead><tr><th>레이어</th><th>2024</th><th>2025</th><th>2026</th></tr></thead><tbody>`;
+  LAYERS.forEach(L=>{
+    h += `<tr><td><span style="display:inline-block;width:6px;height:6px;border-radius:2px;background:${L.col};margin-right:6px"></span>${L.name}</td>`;
+    L.b.forEach(v=>{ h += `<td><span class="cell ${v==="상"?"c3":v==="중"?"c2":"c1"}">${v}</span></td>`; });
+    h += `</tr>`;
+  });
+  h += `</tbody>`;
+  document.getElementById("heat").innerHTML = h;
+}
+
+function renderDeals(){
+  document.getElementById("deals").innerHTML = DEALS.map(d=>`
+    <article class="deal">
+      <div class="dh">
+        <span class="dname">${d.name}</span>
+        <span class="dsub">${d.sub}</span>
+      </div>
+      <div style="margin-top:6px"><span class="bn ${/리스크/.test(d.tag)?'h':/조건부/.test(d.tag)?'m':'l'}">${d.tag}</span></div>
+      <div class="dmeta">${d.meta.map(x=>`<span class="m">${x}</span>`).join("")}</div>
+      <p class="dtxt">${d.txt}</p>
+    </article>`).join("");
+}
+
+function tab(name){
+  closeSheet();
+  ["map","heat","deals"].forEach(k=>{
+    document.getElementById("v-"+k).hidden = (k!==name);
+    document.getElementById("t-"+k).classList.toggle("on", k===name);
+  });
+  window.scrollTo({top:0,behavior:"instant"});
+}
+
+document.getElementById("q").addEventListener("input", e=>{
+  S.q = e.target.value.trim();
+  renderLayers();
+});
+
+renderLegend(); renderLayers(); renderHeat(); renderDeals();
+</script>
+</body>
+</html>

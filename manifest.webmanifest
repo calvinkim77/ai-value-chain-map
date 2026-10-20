@@ -1,0 +1,14 @@
+{
+  "name": "AI 밸류체인 투자 맵",
+  "short_name": "AI 밸류체인",
+  "description": "AI 밸류체인 11개 레이어 · 병목 이동 · 투자 렌즈 · 트래킹 딜",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b0d12",
+  "theme_color": "#0b0d12",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
